@@ -5,9 +5,12 @@ on:
   push:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout
@@ -19,12 +22,9 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Install SDK
         run: |
-          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+          sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -32,16 +32,17 @@ jobs:
           gradle-version: '8.10.2'
 
       - name: Extract ZIP
-        run: unzip -q GeoKeyTouch-source.zip
+        run: |
+          unzip -q -o .github/workflows/GeoKeyTouch-source.zip
 
       - name: Build APK
-        run: |
-          cd GeoKeyTouch-source
-          gradle --no-daemon assembleDebug
+        working-directory: GeoKeyTouch-source
+        run: gradle --no-daemon --stacktrace assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: GeoKeyTouch-APK
           path: GeoKeyTouch-source/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
           
